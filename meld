@@ -1,0 +1,37 @@
+#!/bin/bash
+# Added by Michael
+
+# Get output file
+# Based on http://stackoverflow.com/a/2875513
+# and http://static.askapache.com/shell-scripts/echo-params.sh
+output=
+param=1
+while [ "$param" -le $# ]
+do
+    case "$(eval echo \$$param)" in 
+    -o|--output)
+        output="$(eval echo \$$((param+1)))";
+        break;
+    esac
+    (( param ++ ))
+done
+
+if [ -z $MELD ]; then
+    MELD="c:/Program Files/Meld/meld/bin/meld";
+fi
+"$MELD" "$@" 2>&1 | egrep -v "Warning: g_object_set_qdata:|\
+                              gtk.main()|\
+                              self.widget.hide()|\
+                              self.notebook.remove_page|\
+                              self.find_entry.grab_focus|\
+                              self.textview"
+
+# Test if merge was successful
+unmerged=
+if [ -r "$output" ]; then
+    grep -r "^<<<<<<<" "$output" >/dev/null && \
+    grep -r "^=======" "$output" >/dev/null && \
+    grep -r "^>>>>>>>" "$output" >/dev/null && \
+    unmerged="true";
+fi
+[ -z $unmerged ]
